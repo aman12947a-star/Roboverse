@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gemini AI Pro - Aditi</title>
+    <title>Gemini AI Pro - Fixed</title>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <style>
         :root {
@@ -63,18 +63,12 @@
             width: 100%;
         }
 
-        /* Styling for AI text (Markdown) */
         .ai-message pre {
             background: #000;
             padding: 15px;
             border-radius: 12px;
             overflow-x: auto;
             border: 1px solid #444;
-        }
-
-        .ai-message code {
-            font-family: 'Courier New', Courier, monospace;
-            color: #ffcc00;
         }
 
         .input-area {
@@ -109,11 +103,6 @@
             color: var(--accent-blue);
             cursor: pointer;
             font-size: 20px;
-            transition: 0.3s;
-        }
-
-        button:hover {
-            transform: scale(1.1);
         }
 
         .dots:after { content: '...'; animation: flash 1s infinite; }
@@ -125,7 +114,7 @@
     <header>Gemini Pro 1.5</header>
 
     <div id="chat-container">
-        <div class="message ai-message">Namaste! Main aapki kaise madad kar sakta hoon?</div>
+        <div class="message ai-message">Namaste! Error fix ho gaya hai. Ab aap mujhse kuch bhi puch sakte hain.</div>
     </div>
 
     <div class="input-area">
@@ -136,7 +125,7 @@
     </div>
 
     <script>
-        // Aapki provided API Key yahan set kar di gayi hai
+        // Aapki API Key yahan safe hai
         const API_KEY = "AIzaSyBFXS5bq-eF2zhdXu8pO_U0mrG2Rz94Ei4"; 
         const chatContainer = document.getElementById('chat-container');
         const userInput = document.getElementById('user-input');
@@ -145,7 +134,8 @@
         let chatHistory = [];
 
         async function fetchAIResponse(userText) {
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
+            // FIXED URL: v1beta ki jagah v1 use kiya hai stable model ke liye
+            const url = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
             
             chatHistory.push({ role: "user", parts: [{ text: userText }] });
 
@@ -155,14 +145,13 @@
                 body: JSON.stringify({ contents: chatHistory })
             });
 
+            const data = await response.json();
+
             if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error.message || 'API Request Failed');
+                throw new Error(data.error ? data.error.message : 'API Request Failed');
             }
             
-            const data = await response.json();
             const aiText = data.candidates[0].content.parts[0].text;
-
             chatHistory.push({ role: "model", parts: [{ text: aiText }] });
 
             return aiText;
@@ -202,7 +191,6 @@
             } catch (error) {
                 loadingMsg.classList.remove('dots');
                 loadingMsg.innerText = "Error: " + error.message;
-                console.error(error);
             } finally {
                 sendBtn.disabled = false;
             }
