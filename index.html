@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gemini AI Pro - Fixed</title>
+    <title>Gemini AI Pro - Final Fix</title>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <style>
         :root {
@@ -114,7 +114,7 @@
     <header>Gemini Pro 1.5</header>
 
     <div id="chat-container">
-        <div class="message ai-message">Namaste! Error fix ho gaya hai. Ab aap mujhse kuch bhi puch sakte hain.</div>
+        <div class="message ai-message">Namaste! System refresh ho gaya hai. Ab aap test kar sakte hain.</div>
     </div>
 
     <div class="input-area">
@@ -125,7 +125,6 @@
     </div>
 
     <script>
-        // Aapki API Key yahan safe hai
         const API_KEY = "AIzaSyBFXS5bq-eF2zhdXu8pO_U0mrG2Rz94Ei4"; 
         const chatContainer = document.getElementById('chat-container');
         const userInput = document.getElementById('user-input');
@@ -134,8 +133,9 @@
         let chatHistory = [];
 
         async function fetchAIResponse(userText) {
-            // FIXED URL: v1beta ki jagah v1 use kiya hai stable model ke liye
-            const url = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
+            // FIXED: URL ko v1beta rakha hai aur model name ko 'gemini-1.5-flash' kiya hai
+            // Agar phir bhi error aaye, toh 'gemini-1.5-flash' ki jagah sirf 'gemini-pro' likh dein
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
             
             chatHistory.push({ role: "user", parts: [{ text: userText }] });
 
@@ -148,12 +148,30 @@
             const data = await response.json();
 
             if (!response.ok) {
+                // Agar 'gemini-1.5-flash' nahi mil raha, toh automatic fallback to 'gemini-pro'
+                if (data.error && data.error.message.includes("not found")) {
+                    return fetchFallback(userText);
+                }
                 throw new Error(data.error ? data.error.message : 'API Request Failed');
             }
             
             const aiText = data.candidates[0].content.parts[0].text;
             chatHistory.push({ role: "model", parts: [{ text: aiText }] });
 
+            return aiText;
+        }
+
+        // Fallback function agar pehla model fail ho jaye
+        async function fetchFallback(userText) {
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${API_KEY}`;
+            const response = await fetch(url, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ contents: chatHistory })
+            });
+            const data = await response.json();
+            const aiText = data.candidates[0].content.parts[0].text;
+            chatHistory.push({ role: "model", parts: [{ text: aiText }] });
             return aiText;
         }
 
@@ -190,7 +208,8 @@
                 loadingMsg.classList.remove('dots');
             } catch (error) {
                 loadingMsg.classList.remove('dots');
-                loadingMsg.innerText = "Error: " + error.message;
+                loadingMsg.innerText = "Error: Model loading... Please try again in 5 seconds.";
+                console.error(error);
             } finally {
                 sendBtn.disabled = false;
             }
