@@ -1,27 +1,202 @@
 <!DOCTYPE html>
-<html lang="hi">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Ankit or monu rendi </title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Chat Interface</title>
     <style>
-        body {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-            background-color: #000;
-            color: white;
-            font-family: sans-serif;
+        :root {
+            --bg-color: #131314;
+            --user-msg-bg: #2b2a2a;
+            --ai-msg-bg: transparent;
+            --text-color: #e3e3e3;
+            --input-bg: #1e1f20;
+            --accent-blue: #4285f4;
         }
-        h1 {
-            font-size: 3rem;
-            text-align: center;
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        /* Header */
+        header {
+            padding: 20px;
+            font-size: 1.2rem;
+            font-weight: 500;
+            color: var(--accent-blue);
+            border-bottom: 1px solid #333;
+        }
+
+        /* Chat Container */
+        #chat-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .message {
+            max-width: 80%;
+            padding: 12px 16px;
+            border-radius: 18px;
+            line-height: 1.5;
+            word-wrap: break-word;
+        }
+
+        .user-message {
+            align-self: flex-end;
+            background-color: var(--user-msg-bg);
+            border-bottom-right-radius: 4px;
+        }
+
+        .ai-message {
+            align-self: flex-start;
+            background-color: var(--ai-msg-bg);
+            border-bottom-left-radius: 4px;
+            width: 100%;
+        }
+
+        /* Input Area */
+        .input-area {
+            padding: 20px;
+            background-color: var(--bg-color);
+        }
+
+        .input-wrapper {
+            max-width: 800px;
+            margin: 0 auto;
+            position: relative;
+            background: var(--input-bg);
+            border-radius: 28px;
+            display: flex;
+            align-items: center;
+            padding: 10px 20px;
+        }
+
+        input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: white;
+            font-size: 16px;
+            padding: 10px;
+            outline: none;
+        }
+
+        button {
+            background: none;
+            border: none;
+            color: var(--accent-blue);
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+        button:disabled {
+            color: #555;
+        }
+
+        /* Simple loading animation */
+        .dots:after {
+            content: '...';
+            animation: flash 1s infinite;
+        }
+        @keyframes flash {
+            0% { opacity: 0.2; }
+            50% { opacity: 1; }
+            100% { opacity: 0.2; }
         }
     </style>
 </head>
 <body>
-    <h1>Ankit ki maa ki chut..rendi madar chod bosdk mu me lale mera  monu fuck you   </h1>
+
+    <header>Gemini AI Clone</header>
+
+    <div id="chat-container">
+        <div class="message ai-message">Hello! How can I help you build something amazing today?</div>
+    </div>
+
+    <div class="input-area">
+        <div class="input-wrapper">
+            <input type="text" id="user-input" placeholder="Enter a prompt here..." autocomplete="off">
+            <button id="send-btn">Send</button>
+        </div>
+    </div>
+
+    <script>
+        const API_KEY = "AIzaSyBFXS5bq-eF2zhdXu8pO_U0mrG2Rz94Ei4"; //
+        const chatContainer = document.getElementById('chat-container');
+        const userInput = document.getElementById('user-input');
+        const sendBtn = document.getElementById('send-btn');
+
+        async function fetchAIResponse(prompt) {
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
+            
+            const response = await fetch(url, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    contents: [{ parts: [{ text: prompt }] }]
+                })
+            });
+
+            if (!response.ok) throw new Error('API Request Failed');
+            
+            const data = await response.json();
+            return data.candidates[0].content.parts[0].text;
+        }
+
+        function appendMessage(text, isUser) {
+            const msgDiv = document.createElement('div');
+            msgDiv.classList.add('message');
+            msgDiv.classList.add(isUser ? 'user-message' : 'ai-message');
+            msgDiv.innerText = text;
+            chatContainer.appendChild(msgDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+            return msgDiv;
+        }
+
+        async function handleChat() {
+            const text = userInput.value.trim();
+            if (!text || !API_KEY) {
+                if (!API_KEY) alert("Please a");
+                return;
+            }
+
+            // User message
+            appendMessage(text, true);
+            userInput.value = "";
+            
+            // Loading state
+            const loadingMsg = appendMessage("Thinking", false);
+            loadingMsg.classList.add('dots');
+            sendBtn.disabled = true;
+
+            try {
+                const aiResponse = await fetchAIResponse(text);
+                loadingMsg.classList.remove('dots');
+                loadingMsg.innerText = aiResponse;
+            } catch (error) {
+                loadingMsg.innerText = "Error: Could not reach the AI. Check your API key or connection.";
+                console.error(error);
+            } finally {
+                sendBtn.disabled = false;
+            }
+        }
+
+        sendBtn.addEventListener('click', handleChat);
+        userInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') handleChat();
+        });
+    </script>
 </body>
-</html> 
+</html>
 
